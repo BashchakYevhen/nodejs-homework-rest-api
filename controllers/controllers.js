@@ -1,7 +1,14 @@
-const { Contact } = require("../models/contacts");
+const { Contact } = require("../models/contacts.model");
+require("dotenv").config();
+const { LIMIT } = process.env;
 
 async function getAllContacts(req, res, next) {
-  const contacts = await Contact.find();
+  console.log("Q_U_E_R_Y", req.query);
+  const { page = 1, limit = LIMIT, favorite } = req.query;
+  const skip = (page - 1) * limit;
+  const favoriteContacts = favorite ? { favorite } : {};
+
+  const contacts = await Contact.find(favoriteContacts).skip(skip).limit(limit);
   return res.status(200).json({ data: { contact: contacts } });
 }
 
