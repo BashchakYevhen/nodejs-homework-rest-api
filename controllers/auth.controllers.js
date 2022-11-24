@@ -6,8 +6,8 @@ require("dotenv").config();
 const { JWT_SECRET } = process.env;
 
 async function register(req, res, next) {
-  const { email, password } = req.body;
-  const user = new User({ email, password });
+  const { email, password, subscription = "starter" } = req.body;
+  const user = new User({ email, password, subscription });
 
   try {
     await user.save();
