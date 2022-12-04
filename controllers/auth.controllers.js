@@ -2,12 +2,14 @@ const { User } = require("../models/user.model");
 const bcrypt = require("bcrypt");
 const { Conflict, Unauthorized } = require("http-errors");
 const jwt = require("jsonwebtoken");
+const gravatar = require("gravatar");
 require("dotenv").config();
 const { JWT_SECRET } = process.env;
 
 async function register(req, res, next) {
   const { email, password, subscription = "starter" } = req.body;
-  const user = new User({ email, password, subscription });
+  const avatarURL = gravatar.url(email);
+  const user = new User({ email, password, subscription, avatarURL });
 
   try {
     await user.save();
@@ -20,7 +22,9 @@ async function register(req, res, next) {
     throw error;
   }
   return res.status(201).json({
-    data: { User: { email: user.email, subscription: user.subscription } },
+    data: {
+      User: { email: user.email, subscription: user.subscription, avatarURL },
+    },
   });
 }
 
@@ -39,7 +43,7 @@ async function login(req, res, next) {
     throw new Unauthorized("Email or password is wrong");
   }
 
-  const token = jwt.sign({ _id: user._id }, JWT_SECRET, { expiresIn: "5m" });
+  const token = jwt.sign({ _id: user._id }, JWT_SECRET, { expiresIn: "30m" });
   user.token = token;
   await User.findByIdAndUpdate(user._id, user);
 
