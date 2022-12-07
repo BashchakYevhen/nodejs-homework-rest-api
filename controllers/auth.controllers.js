@@ -1,18 +1,36 @@
-const { User } = require("../models/user.model");
+const { v4: uuidv4 } = require("uuid");
 const bcrypt = require("bcrypt");
 const { Conflict, Unauthorized } = require("http-errors");
 const jwt = require("jsonwebtoken");
 const gravatar = require("gravatar");
+const sgMail = require("@sendgrid/mail");
+const { User } = require("../models/user.model");
 require("dotenv").config();
-const { JWT_SECRET } = process.env;
+const { JWT_SECRET, SENDGRID_API_KEY, EMAIL } = process.env;
 
 async function register(req, res, next) {
   const { email, password, subscription = "starter" } = req.body;
   const avatarURL = gravatar.url(email);
-  const user = new User({ email, password, subscription, avatarURL });
+  const verificationToken = uuidv4();
+  const user = new User({
+    email,
+    password,
+    subscription,
+    avatarURL,
+    verificationToken,
+  });
 
   try {
     await user.save();
+    sgMail.setApiKey(SENDGRID_API_KEY);
+    const msg = {
+      to: EMAIL,
+      from: EMAIL,
+      subject: "Confirm registration",
+      text: "and easy to do anywhere, even with Node.js",
+      html: `<p>Follow to link -</p><a>localhost:3000/api/users/verify/${verificationToken}</a>`,
+    };
+    await sgMail.send(msg);
   } catch (error) {
     console.log(error);
     if (error.message.includes("duplicate key error collection")) {
@@ -42,6 +60,9 @@ async function login(req, res, next) {
     // return res.status(401).json({ message: "Email or password is wrong" });
     throw new Unauthorized("Email or password is wrong");
   }
+  if (user.verify === false) {
+    return res.status(400).json({ message: "Email is not confirmed" });
+  }
 
   const token = jwt.sign({ _id: user._id }, JWT_SECRET, { expiresIn: "30m" });
   user.token = token;
@@ -64,4 +85,5 @@ async function logout(req, res, next) {
   await User.findByIdAndUpdate(user._id, user);
   return res.status(204).json({ message: "No Content" });
 }
+
 module.exports = { login, register, logout };
