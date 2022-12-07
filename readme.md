@@ -34,3 +34,19 @@ body{
 "email": "email",
 "password": "min-6",
 };
+
+POST: localhost:3000/api/user/login
+body{
+"email": "email",
+"password": "min-6",
+};
+
+POST: localhost:3000/api/user/logout - JWT;
+
+GET: localhost:3000/api/user/current - JWT;
+ 
+PATCH: localhost:3000/api/user/avatars - JWT + body:{ image };
+
+POST: localhost:3000/api/user/verify - body:{ email };
+
+POST: localhost:3000/api/user/verify/:verificationToken;
